@@ -1,0 +1,16 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+*.pem
+*.crx
+.env
+
+# Generated data files (run `npm run build:dict` to generate)
+public/data/cedict.txt
+public/data/cedict.json
+public/data/unihan.json
+public/data/hsk.json
+public/data/radicals.json
+public/data/unihan_temp/
+public/data/Unihan.zip

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mandarin Reader</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      width: 280px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 16px;
+      background: #fff;
+    }
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h1::before {
+      content: '📖';
+    }
+    .description {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    .instructions {
+      background: #f5f5f5;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+    .instructions h2 {
+      font-size: 12px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .instructions p {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.5;
+    }
+    .instructions kbd {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .links a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #4a90d9;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    .links a:hover {
+      background: #3a7bc8;
+    }
+    .links a.secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+    .links a.secondary:hover {
+      background: #e0e0e0;
+    }
+    .stats {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #eee;
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+    }
+    .stats span {
+      font-weight: 600;
+      color: #4a90d9;
+    }
+    .settings {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #eee;
+    }
+    .settings h2 {
+      font-size: 12px;
+      font-weight: 600;
+      color: #444;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+    }
+    .setting-label {
+      font-size: 13px;
+      color: #333;
+    }
+    .toggle-group {
+      display: flex;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #ddd;
+    }
+    .toggle-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border: none;
+      background: #f5f5f5;
+      color: #666;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .toggle-btn:first-child {
+      border-right: 1px solid #ddd;
+    }
+    .toggle-btn.active {
+      background: #4a90d9;
+      color: white;
+    }
+    .toggle-btn:hover:not(.active) {
+      background: #e8e8e8;
+    }
+  </style>
+</head>
+<body>
+  <h1>Mandarin Reader</h1>
+  <p class="description">
+    Your personal Chinese reading companion. Look up words as you browse and build your vocabulary.
+  </p>
+
+  <div class="instructions">
+    <h2>How to use</h2>
+    <p>
+      Simply highlight any Chinese text on a webpage to see its meaning and pronunciation.
+    </p>
+  </div>
+
+  <div class="links">
+    <a href="vocabulary.html" target="_blank">📚 My Vocabulary</a>
+  </div>
+
+  <div class="settings">
+    <h2>Display Mode</h2>
+    <div class="setting-row">
+      <span class="setting-label">Popup style</span>
+      <div class="toggle-group">
+        <button class="toggle-btn" id="modal-btn" data-mode="modal">Modal</button>
+        <button class="toggle-btn" id="sidebar-btn" data-mode="sidebar">Sidebar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats" id="stats">
+    Loading stats...
+  </div>
+
+  <script>
+    (async () => {
+      // Load stats
+      try {
+        const response = await chrome.runtime.sendMessage({ type: 'GET_VOCABULARY' });
+        const count = response.entries?.length || 0;
+        document.getElementById('stats').innerHTML =
+          `<span>${count}</span> word${count !== 1 ? 's' : ''} in your vocabulary`;
+      } catch (e) {
+        document.getElementById('stats').textContent = '';
+      }
+
+      // Load and set view mode
+      const { viewMode = 'modal' } = await chrome.storage.local.get('viewMode');
+      updateModeButtons(viewMode);
+
+      // Handle mode toggle
+      document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const mode = btn.dataset.mode;
+          await chrome.storage.local.set({ viewMode: mode });
+          updateModeButtons(mode);
+        });
+      });
+
+      function updateModeButtons(mode) {
+        document.getElementById('modal-btn').classList.toggle('active', mode === 'modal');
+        document.getElementById('sidebar-btn').classList.toggle('active', mode === 'sidebar');
+      }
+    })();
+  </script>
+</body>
+</html>
