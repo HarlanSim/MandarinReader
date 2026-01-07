@@ -152,8 +152,8 @@ async function syncToChrome(entry: VocabularyEntry): Promise<void> {
     if (jsonSize < 100000) {
       await chrome.storage.sync.set({ [SYNC_KEY]: syncedData });
     }
-  } catch (e) {
-    console.warn('Failed to sync to chrome.storage.sync:', e);
+  } catch {
+    // Sync failed silently
   }
 }
 
@@ -240,7 +240,7 @@ export async function syncFromChrome(): Promise<void> {
         await db.put('vocabulary', newEntry);
       }
     }
-  } catch (e) {
-    console.warn('Failed to sync from chrome.storage.sync:', e);
+  } catch {
+    // Sync failed silently
   }
 }

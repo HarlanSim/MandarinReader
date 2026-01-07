@@ -11,13 +11,7 @@ import {
 } from '../shared/storage';
 import type { MessageRequest, MessageResponse, LookupResult } from '../shared/types';
 
-const DEBUG = true;
-function log(...args: unknown[]): void {
-  if (DEBUG) console.log('[MandarinReader BG]', ...args);
-}
-
 chrome.runtime.onInstalled.addListener(async () => {
-  log('Extension installed');
   await preloadDictionaries();
   await syncFromChrome();
 
@@ -26,25 +20,19 @@ chrome.runtime.onInstalled.addListener(async () => {
     title: 'Translate Chinese',
     contexts: ['selection'],
   });
-  log('Context menu created');
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  log('Extension startup');
   await preloadDictionaries();
   await syncFromChrome();
 });
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  log('Context menu clicked', info, tab);
-
   if (info.menuItemId === 'mandarin-reader-lookup' && tab?.id) {
-    log('Sending CONTEXT_MENU_LOOKUP to tab', tab.id);
     try {
       await chrome.tabs.sendMessage(tab.id, { type: 'CONTEXT_MENU_LOOKUP' });
-      log('Message sent successfully');
-    } catch (error) {
-      log('Failed to send message:', error);
+    } catch {
+      // Tab may not have content script loaded
     }
   }
 });
@@ -55,8 +43,6 @@ async function handleLookup(
   sourceUrl?: string,
   skipSave?: boolean
 ): Promise<LookupResult> {
-  log('handleLookup called with text:', text, 'skipSave:', skipSave);
-
   const seenWith: Record<string, string[]> = {};
 
   // Run dictionary lookup and translation in parallel
@@ -64,9 +50,6 @@ async function handleLookup(
     performLookup(text, seenWith, isWordKnown),
     translateToEnglish(text),
   ]);
-
-  log('performLookup returned segments:', result.segments.length);
-  log('naturalTranslation:', naturalTranslation);
 
   result.naturalTranslation = naturalTranslation;
 
@@ -115,16 +98,13 @@ async function fetchAudioAsDataUrl(text: string): Promise<string | null> {
       reader.onerror = () => resolve(null);
       reader.readAsDataURL(blob);
     });
-  } catch (e) {
-    log('Audio fetch error:', e);
+  } catch {
     return null;
   }
 }
 
 chrome.runtime.onMessage.addListener(
   (request: MessageRequest | { type: 'GET_AUDIO'; text: string }, _sender, sendResponse: (response: MessageResponse | { audioUrl: string | null }) => void) => {
-    log('Received message:', request.type);
-
     (async () => {
       try {
         if (request.type === 'GET_AUDIO') {
@@ -135,14 +115,12 @@ chrome.runtime.onMessage.addListener(
 
         switch (request.type) {
           case 'LOOKUP': {
-            log('Processing LOOKUP for:', request.text);
             const result = await handleLookup(
               request.text,
               request.context,
               request.sourceUrl,
               request.skipSave
             );
-            log('LOOKUP complete, sending response');
             sendResponse({
               type: 'LOOKUP_RESULT',
               success: true,
@@ -177,7 +155,6 @@ chrome.runtime.onMessage.addListener(
             });
         }
       } catch (error) {
-        console.error('Background error:', error);
         sendResponse({
           type: 'LOOKUP_RESULT',
           success: false,

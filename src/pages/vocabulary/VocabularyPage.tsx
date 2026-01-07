@@ -22,8 +22,8 @@ function VocabularyPage() {
       if (response.entries) {
         setEntries(response.entries);
       }
-    } catch (error) {
-      console.error('Failed to load vocabulary:', error);
+    } catch {
+      // Failed to load vocabulary
     } finally {
       setLoading(false);
     }
@@ -97,15 +97,14 @@ function VocabularyPage() {
           audioUrl = response.audioUrl;
           audioCache.current.set(word, audioUrl);
         }
-      } catch (e) {
-        console.error('Audio fetch error:', e);
+      } catch {
         return;
       }
     }
 
     if (audioUrl) {
       currentAudio.current = new Audio(audioUrl);
-      currentAudio.current.play().catch(console.error);
+      currentAudio.current.play().catch(() => {});
     }
   }
 

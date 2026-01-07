@@ -18,8 +18,7 @@ export async function translateToEnglish(text: string): Promise<string> {
     }
 
     return '';
-  } catch (error) {
-    console.error('[MandarinReader] Translation failed:', error);
+  } catch {
     return '';
   }
 }

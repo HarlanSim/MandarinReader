@@ -1,11 +1,6 @@
 import type { LookupResult, LookupResponse, CharacterInfo, WordSegment } from '../shared/types';
 import { convertNumbersInText, pinyinToHtml } from '../shared/pinyin';
 
-const DEBUG = true;
-function log(...args: unknown[]): void {
-  if (DEBUG) console.log('[MandarinReader]', ...args);
-}
-
 let popup: HTMLElement | null = null;
 let loadingIndicator: HTMLElement | null = null;
 let currentResult: LookupResult | null = null;
@@ -22,13 +17,9 @@ type ViewMode = 'modal' | 'sidebar';
 let viewMode: ViewMode = 'modal';
 let sidebarWidth = 320;
 
-log('Content script loaded');
-
-// Load saved view mode preference
 chrome.storage.local.get(['viewMode', 'sidebarWidth'], (result) => {
   if (result.viewMode) viewMode = result.viewMode;
   if (result.sidebarWidth) sidebarWidth = result.sidebarWidth;
-  log('Loaded view mode:', viewMode, 'sidebar width:', sidebarWidth);
 });
 
 function createLoadingIndicator(): HTMLElement {
@@ -92,7 +83,6 @@ function createPopup(): HTMLElement {
 function toggleViewMode(): void {
   viewMode = viewMode === 'modal' ? 'sidebar' : 'modal';
   chrome.storage.local.set({ viewMode });
-  log('Toggled view mode to:', viewMode);
 
   // Recreate popup with new mode
   if (popup) {
@@ -352,8 +342,7 @@ async function fetchGoogleTranslation(word: string): Promise<string | null> {
       return data[0][0][0];
     }
     return null;
-  } catch (e) {
-    log('Google Translate error:', e);
+  } catch {
     return null;
   }
 }
@@ -506,17 +495,14 @@ async function playAudio(text: string): Promise<void> {
         audioUrl = response.audioUrl;
         audioCache.set(text, audioUrl);
       }
-    } catch (e) {
-      log('Audio fetch error:', e);
+    } catch {
       return;
     }
   }
 
   if (audioUrl) {
     currentAudio = new Audio(audioUrl);
-    currentAudio.play().catch(e => {
-      log('Audio playback error:', e);
-    });
+    currentAudio.play().catch(() => {});
   }
 }
 
@@ -540,26 +526,20 @@ function isChinese(text: string): boolean {
   return /[\u4e00-\u9fff]/.test(text);
 }
 
-async function handleSelection(fromContextMenu = false): Promise<void> {
-  log('handleSelection called, fromContextMenu:', fromContextMenu);
-
+async function handleSelection(_fromContextMenu = false): Promise<void> {
   const selection = window.getSelection();
   if (!selection || selection.isCollapsed) {
-    log('No selection or collapsed');
     return;
   }
 
   const text = selection.toString().trim();
-  log('Selected text:', text);
 
   if (!text || !isChinese(text)) {
-    log('Text empty or not Chinese');
     return;
   }
 
   const range = selection.getRangeAt(0);
   const rect = range.getBoundingClientRect();
-  log('Selection rect:', rect);
 
   // Check if selection is within the popup
   const isWithinPopup = popup && popup.contains(range.commonAncestorContainer as Node);
@@ -572,7 +552,6 @@ async function handleSelection(fromContextMenu = false): Promise<void> {
 
   isLookingUp = true;
   showLoading(rect.left, rect.bottom);
-  log('Showing loading indicator, sending LOOKUP request...');
 
   try {
     const response = await chrome.runtime.sendMessage({
@@ -583,19 +562,13 @@ async function handleSelection(fromContextMenu = false): Promise<void> {
       skipSave: isWithinPopup,
     }) as LookupResponse;
 
-    log('Got response:', response);
     hideLoading();
     isLookingUp = false;
 
     if (response.success && response.result) {
-      log('Showing popup at', posX, posY, 'pushToHistory:', isWithinPopup);
       showPopup(posX, posY, response.result, isWithinPopup);
-    } else {
-      log('Response not successful or no result:', response);
     }
-  } catch (error) {
-    console.error('[MandarinReader] Lookup failed:', error);
-    log('Lookup error:', error);
+  } catch {
     hideLoading();
     isLookingUp = false;
   }
@@ -606,7 +579,6 @@ let isSelectingText = false;
 
 document.addEventListener('mousedown', (e) => {
   isSelectingText = true;
-  log('mousedown, isLookingUp:', isLookingUp);
 
   if (isLookingUp) return;
 
@@ -616,15 +588,12 @@ document.addEventListener('mousedown', (e) => {
   if (popup && popup.classList.contains('visible')) {
     const target = e.target as HTMLElement;
     if (!popup.contains(target)) {
-      log('Hiding popup (clicked outside)');
       hidePopup();
     }
   }
 });
 
 document.addEventListener('mouseup', () => {
-  log('mouseup');
-
   if (selectionTimeout) {
     clearTimeout(selectionTimeout);
   }
@@ -633,7 +602,6 @@ document.addEventListener('mouseup', () => {
     isSelectingText = false;
     const selection = window.getSelection();
     const text = selection?.toString() || '';
-    log('Selection check - text:', text, 'isCollapsed:', selection?.isCollapsed, 'isChinese:', isChinese(text));
 
     if (selection && !selection.isCollapsed && isChinese(text)) {
       handleSelection();
@@ -643,23 +611,17 @@ document.addEventListener('mouseup', () => {
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && popup?.classList.contains('visible')) {
-    log('Escape pressed, hiding popup');
     hidePopup();
   }
 });
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  log('Received message:', message);
-
   if (message.type === 'CONTEXT_MENU_LOOKUP') {
-    log('Context menu lookup triggered');
     handleSelection(true);
     sendResponse({ success: true });
   }
 
   return true;
 });
-
-log('Event listeners registered');
 
 export {};

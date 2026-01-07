@@ -38,8 +38,7 @@ async function loadCedict(): Promise<CedictData> {
     const response = await fetch(chrome.runtime.getURL('data/cedict.json'));
     cedictData = await response.json();
     return cedictData!;
-  } catch (e) {
-    console.error('Failed to load CC-CEDICT:', e);
+  } catch {
     return {};
   }
 }
@@ -51,8 +50,7 @@ async function loadUnihan(): Promise<UnihanData> {
     const response = await fetch(chrome.runtime.getURL('data/unihan.json'));
     unihanData = await response.json();
     return unihanData!;
-  } catch (e) {
-    console.error('Failed to load Unihan:', e);
+  } catch {
     return {};
   }
 }
@@ -64,8 +62,7 @@ async function loadRadicals(): Promise<RadicalData> {
     const response = await fetch(chrome.runtime.getURL('data/radicals.json'));
     radicalData = await response.json();
     return radicalData!;
-  } catch (e) {
-    console.error('Failed to load radicals:', e);
+  } catch {
     return {};
   }
 }
@@ -77,8 +74,7 @@ async function loadHsk(): Promise<HskData> {
     const response = await fetch(chrome.runtime.getURL('data/hsk.json'));
     hskData = await response.json();
     return hskData!;
-  } catch (e) {
-    console.error('Failed to load HSK:', e);
+  } catch {
     return {};
   }
 }

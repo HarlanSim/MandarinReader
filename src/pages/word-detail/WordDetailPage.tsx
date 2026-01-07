@@ -27,8 +27,7 @@ function WordDetailPage() {
       } else {
         setError('Word not found');
       }
-    } catch (err) {
-      console.error('Failed to load word:', err);
+    } catch {
       setError('Failed to load word');
     } finally {
       setLoading(false);
@@ -57,15 +56,14 @@ function WordDetailPage() {
           audioUrl = response.audioUrl;
           audioCache.current.set(word, audioUrl);
         }
-      } catch (e) {
-        console.error('Audio fetch error:', e);
+      } catch {
         return;
       }
     }
 
     if (audioUrl) {
       currentAudio.current = new Audio(audioUrl);
-      currentAudio.current.play().catch(console.error);
+      currentAudio.current.play().catch(() => {});
     }
   }
 
